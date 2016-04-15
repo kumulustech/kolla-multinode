@@ -1,0 +1,5 @@
+[controller]
+controller.opsits.com  ansible_ssh_user=root
+[compute]
+compute-1.opsits.com  ansible_ssh_user=root
+compute-2.opsits.com  ansible_ssh_user=root

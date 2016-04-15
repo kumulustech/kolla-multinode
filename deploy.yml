@@ -1,0 +1,16 @@
+---
+- hosts: all
+  vars:
+  - name: include global variables
+    vars_files: vars/global.yml
+  pre_tasks:
+  - name: install system specific packages
+    include: debian.yml
+    when: ansible_os_family == "Debian"
+  - name: install RedHat specific packages
+    include: redhat.yml
+    when: ansible_os_family == "RedHat"
+  tasks:
+  - name: update ssh keys from git
+    authorized_key: user=root key=https://github.com/{{item}}.keys
+    with_items: ['rstarmer','bshetti','johnstarmer','cdm-kumulus']

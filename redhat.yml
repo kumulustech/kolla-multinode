@@ -1,0 +1,6 @@
+---
+- name: install packages
+  yum: name={{item}} state=installed
+  with_items:
+    - git
+    - vim
