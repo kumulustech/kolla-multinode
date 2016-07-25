@@ -1,0 +1,11 @@
+registry:
+  restart: always
+  image: registry:2
+  ports:
+    - 4000:5000
+  environment:
+    REdISTRY_HTTP_TLS_CERTIFICATE: /certs/domain.crt
+    REGISTRY_HTTP_TLS_KEY: /certs/domain.key
+  volumes:
+    - /var/lib/docker/registry:/var/lib/registry
+    - /var/lib/docker/certs:/certs

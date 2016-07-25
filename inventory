@@ -1,5 +1,7 @@
 [controller]
-controller.opsits.com  ansible_ssh_user=root
+kolla.opsits.com  ansible_ssh_user=root
+#controller.opsits.com  ansible_ssh_user=root
+#conjure.opsits.com  ansible_ssh_user=ubuntu
 [compute]
 compute-1.opsits.com  ansible_ssh_user=root
 compute-2.opsits.com  ansible_ssh_user=root

@@ -1,5 +1,11 @@
 ---
-- hosts: all
+- hosts: controller
+  tasks:
+  - raw: apt-get install python -y
+    ignore_errors: true
+- hosts: controller
+  become: true
+  become_user: root
   vars:
   - name: include global variables
     vars_files: vars/global.yml
@@ -11,6 +17,97 @@
     include: redhat.yml
     when: ansible_os_family == "RedHat"
   tasks:
+  - name: deploy wily resources
+    include: wily.yml
+    when: ansible_os_family == "Debian"
   - name: update ssh keys from git
     authorized_key: user=root key=https://github.com/{{item}}.keys
     with_items: ['rstarmer','bshetti','johnstarmer','cdm-kumulus']
+  - name: install docker from upstream
+    shell: curl -sSL https://get.docker.io | bash creates=/etc/docker/key.json
+  - name: ensure docker is running
+    service: name=docker state=started enabled=true
+  - name: Install pip based docker-py module
+    pip: name=docker-py
+#  - name: Install ansible version 2.0 or greater
+#    pip: name=ansible state=latest
+  - name: clone kolla
+    git: repo=https://git.openstack.org/openstack/kolla dest=/root/kolla version=stable/mitaka
+  - name: install kolla elements
+    pip: name=kolla/ chdir=/root
+  - name: update the /etc/kolla directory
+    command: cp -r etc/kolla /etc
+    args:
+      chdir: /root/kolla
+      creates: /etc/kolla
+  - name: create registry directory if it doesn't exist
+    file: state=directory path=/var/lib/docker/registry
+  - name: create certs director if it doesn't exist
+    file: state=directory path=/var/lib/docker/certs
+  - name: create ssl certs config file for self signed cert
+    template: src=templates/openssl_cnf.j2 dest=/var/lib/docker/certs/openssl.cnf mode=0644
+  - name: create docker registry compose file
+    template: src=templates/registry_yml.j2 dest=/var/lib/docker/docker-compose.yml mode=0644
+  - name: create a self signed CA key
+    command: openssl genrsa -out /var/lib/docker/certs/ca-key.pem 2048 creates=/var/lib/docker/certs/ca-key.pem
+  - name: create ssl cert for docker registry
+    command: openssl req -new -nodes -key /var/lib/docker/certs/ca-key.pem -x509 -days 365 -out /var/lib/docker/certs/domain.crt -subj "/CN=registry" -config /var/lib/docker/certs/openssl.cnf creates=/var/lib/docker/certs/domain.crt
+  - name: copy the crt to all machines, initially the controller
+    fetch: src=/var/lib/docker/certs/domain.crt dest=files/domain.crt
+  - name: restart docker
+    service: name=docker state=restarted
+  - name: check to see if docker registry is running
+    command: docker ps
+    register: docker_ps
+  - name: install docker-compose
+    apt: name=docker-compose state=installed
+    when: ansible_os_family == "Debian"
+  - name: install docker-compose
+    yum: name=docker-compose state=installed
+    when: ansible_os_family == "RedHat"
+  - name: start the docker registry
+#    command: docker run -d -p 4000:5000 --restart=always --name registry registry:2
+    command: docker-compose up -d  chdir=/var/lib/docker
+    when: "docker_ps.stdout | search('registry') == false"
+
+## address the docker insecure registry so that builds can succeed
+  - name: update /etc/default/docker on Ubuntu systems
+    lineinfile: dest=/etc/default/docker regexp='^DOCKER_OPTS="(.*)"' line='DOCKER_OPTS="--insecure-registry {{ansible_default_ipv4.address}}:4000"'
+    when: ansible_os_family == "Debian"
+  - name: create /etc/sysconfig/docker if it does not exist
+    file: name=/etc/sysconfig/docker mode=0755 state=touch
+    when: ansible_os_family == "RedHat"
+  - name: update /etc/sysconfig/docker on CentoOS systems
+    lineinfile: dest=/etc/sysconfig/docker regexp='^INSECURE_REGISTRY="(.*)"' line='INSECURE_REGISTRY="--insecure-registry {{ansible_default_ipv4.address}}:4000"' force=yes
+    when: ansible_os_family == "RedHat"
+  - name: find docker.service
+    find: path=/lib/systemd/system pattern='docker.service'
+    register: docker_service
+  - name: copy docker.service file if it exists
+    command: cp /lib/systemd/system/docker.service /etc/systemd/system/docker.service
+    when: docker_service.matched
+  - name: create docker file if it doesn't already exist
+    file: dest=/etc/systemd/system/docker.service state=present mode=0755
+    when: not docker_service.matched
+  - name: update docker.service file environment file
+    ini_file: dest=/etc/systemd/system/docker.service section=Service option=EnvironmentFiles value='-/etc/default/docker'
+  - name: update docker.service file execstart
+    ini_file: dest=/etc/systemd/system/docker.service section=Service option=ExecStart value='/usr/bin/docker daemon -H fd:// $DOCKER_OPS'
+  - name: restart daemons
+    command: systemctl daemon-reload
+  - name: restart docker service
+    service: name=docker state=restarted
+
+## Update the /etc/kolla/globals.yml based on the environment
+  - name: ensure base is ubuntu
+    lineinfile: 'dest=/etc/kolla/globals.yml regexp=^.*kolla_base_distro.* line="kolla_base_distro: ubuntu"'
+  - name: ensure install type is source
+    lineinfile: 'dest=/etc/kolla/globals.yml regexp=^.*kolla_install_type.* line="kolla_install_type: source"'
+  - name: set the default VIP address
+    lineinfile: 'dest=/etc/kolla/globals.yml regexp=^.*kolla_internal_vip_address.* line="kolla_internal_vip_address: {{ ansible_default_ipv4.network + 254 | ipaddr }}"'
+
+## Build the images
+#  - name: run kolla build to build source based images
+#    command: 'kolla-build --type source --base ubuntu --registry {{ ansible_default_ipv4.address }}:4000 --push'
+#    async: 10
+#    poll: 0

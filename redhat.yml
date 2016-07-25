@@ -1,6 +1,18 @@
 ---
+- name: install epel
+  yum: name=epel-release state=latest
 - name: install packages
-  yum: name={{item}} state=installed
+  yum: name={{item}} state=latest
   with_items:
     - git
     - vim
+    - epel-release
+    - python-pip
+    - ansible
+    - ntp
+- name: update all
+  yum: name='*' state=latest
+- name: start and enable services
+  service: name={{item}} state=started enabled=true
+  with_items:
+  - ntpd

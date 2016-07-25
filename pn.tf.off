@@ -1,0 +1,49 @@
+# Create a Virtual Machine
+
+
+# If you don't already have a domain defined in Digital Ocean
+
+#resource "digitalocean_domain" "opsits-com" {
+#    name = "opsits.com"
+#}
+
+# create a master device resoruce in packet.net
+resource "packet_device" "kolla" {
+        hostname = "kolla"
+        plan = "baremetal_1"
+        facility = "ewr1"
+	operating_system = "centos_7"
+        billing_cycle = "hourly"
+        project_id = "320c2c2f-6876-4621-929a-93a47e07d2da"
+}
+
+# create a master device resoruce in packet.net
+#resource "packet_device" "minion" {
+#        hostname = "minion"
+#        plan = "baremetal_1"
+#        facility = "ewr1"
+#	operating_system = "ubuntu_16_04"
+#        billing_cycle = "hourly"
+#        project_id = "320c2c2f-6876-4621-929a-93a47e07d2da"
+#}
+
+
+# Add a pointer to the new IP address
+# Note that the default TTYL is 1800 seconds, so it will take
+# up to 30 minutes in this enviornment for the record to time out.
+
+resource "digitalocean_record" "kolla" {
+    domain = "opsits.com"
+    type = "A"
+    name = "kolla"
+    value = "${packet_device.kolla.network.0.address}"
+}
+
+#resource "digitalocean_record" "minion" {
+#    domain = "opsits.com"
+#    type = "A"
+#    name = "minion"
+#    value = "${packet_device.minion.network.0.address}"
+#}
+
+

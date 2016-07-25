@@ -1,1 +1,3 @@
+.cachedir/
 terraform*
+*retry
