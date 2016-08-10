@@ -1,0 +1,12 @@
+---
+- hosts: all
+  gather_facts: false
+  tasks:
+  - raw: apt-get install python -y
+    ignore_errors: true
+- hosts: all
+  tasks:
+  - debug: msg="{{ansible_default_ipv4.address}} {{inventory_hostname}} {{ansible_nodename}}"
+  - name: add ssh key
+    authorized_key: user=root key="{{ lookup('file', 'files/id_rsa.pub') }}" state=present
+

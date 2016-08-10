@@ -1,3 +1,4 @@
 ---
 # Variables for global use
 git_ssh_keys: ['rstarmer','bshetti','jstarmer','cdmerrit']
+domain: 'opsits.com'

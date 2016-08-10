@@ -1,7 +1,19 @@
-[controller]
-kolla.opsits.com  ansible_ssh_user=root
-#controller.opsits.com  ansible_ssh_user=root
-#conjure.opsits.com  ansible_ssh_user=ubuntu
+[build]
+kolla.opsits.com 
+#controller.opsits.com 
+#conjure.opsits.com 
 [compute]
-compute-1.opsits.com  ansible_ssh_user=root
-compute-2.opsits.com  ansible_ssh_user=root
+compute01.opsits.com 
+compute02.opsits.com 
+compute03.opsits.com 
+[control]
+control01.opsits.com 
+control02.opsits.com 
+control03.opsits.com 
+[storage]
+storage01.opsits.com
+storage02.opsits.com
+storage03.opsits.com
+
+[all:vars]
+ansible_ssh_user=ubuntu

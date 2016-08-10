@@ -1,15 +1,20 @@
 ---
-- hosts: controller
+- hosts: build
+  gather_facts: false
+  become: true
+  become_user: root
   tasks:
   - raw: apt-get install python -y
     ignore_errors: true
-- hosts: controller
+
+- hosts: build
   become: true
   become_user: root
   vars:
-  - name: include global variables
-    vars_files: vars/global.yml
+   vld: /var/lib/docker
   pre_tasks:
+  - name: include variables
+    include_vars: vars/global.yml
   - name: install system specific packages
     include: debian.yml
     when: ansible_os_family == "Debian"
@@ -19,7 +24,7 @@
   tasks:
   - name: deploy wily resources
     include: wily.yml
-    when: ansible_os_family == "Debian"
+    when: ansible_os_family == "Debian" and not ansible_lsb.codename == "xenial"
   - name: update ssh keys from git
     authorized_key: user=root key=https://github.com/{{item}}.keys
     with_items: ['rstarmer','bshetti','johnstarmer','cdm-kumulus']
@@ -29,10 +34,11 @@
     service: name=docker state=started enabled=true
   - name: Install pip based docker-py module
     pip: name=docker-py
-#  - name: Install ansible version 2.0 or greater
-#    pip: name=ansible state=latest
+  - name: Install ansible version 2.0 or greater
+    pip: name=ansible state=latest
   - name: clone kolla
     git: repo=https://git.openstack.org/openstack/kolla dest=/root/kolla version=stable/mitaka
+    ignore_errors: true
   - name: install kolla elements
     pip: name=kolla/ chdir=/root
   - name: update the /etc/kolla directory
@@ -41,19 +47,42 @@
       chdir: /root/kolla
       creates: /etc/kolla
   - name: create registry directory if it doesn't exist
-    file: state=directory path=/var/lib/docker/registry
-  - name: create certs director if it doesn't exist
-    file: state=directory path=/var/lib/docker/certs
-  - name: create ssl certs config file for self signed cert
-    template: src=templates/openssl_cnf.j2 dest=/var/lib/docker/certs/openssl.cnf mode=0644
+    file: state=directory path={{vld}}/registry
   - name: create docker registry compose file
-    template: src=templates/registry_yml.j2 dest=/var/lib/docker/docker-compose.yml mode=0644
+    template: src=templates/registry_yml.j2 dest={{vld}}/docker-compose.yml mode=0644
+
+# certificate for SSL/TLS
+  - name: create certs directory if it doesn't exist
+    file: state=directory path={{vld}}/certs
+  - name: create ssl certs config file for self signed cert
+    template: src=templates/openssl_cnf.j2 dest={{vld}}/certs/openssl.cnf mode=0644
+
   - name: create a self signed CA key
-    command: openssl genrsa -out /var/lib/docker/certs/ca-key.pem 2048 creates=/var/lib/docker/certs/ca-key.pem
-  - name: create ssl cert for docker registry
-    command: openssl req -new -nodes -key /var/lib/docker/certs/ca-key.pem -x509 -days 365 -out /var/lib/docker/certs/domain.crt -subj "/CN=registry" -config /var/lib/docker/certs/openssl.cnf creates=/var/lib/docker/certs/domain.crt
+    command: openssl genrsa -out {{vld}}/certs/ca-key.pem 2048 creates={{vld}}/certs/ca-key.pem
+  - name: create a signing certificate with our CA key
+    command: openssl req -x509 -new -nodes -key {{vld}}/certs/ca-key.pem -days 10000 -out {{vld}}/certs/ca.pem -subj "/CN=registry-ca" creates={{vld}}/certs/ca.pem
+  - name: create ca.crt directory for docker
+    file: dest=/etc/docker/certs.d/{{ansible_default_ipv4.address}}:4000/ state=directory
+  - name: get ca.pem as ca.crt
+    fetch: src={{vld}}/certs/ca.pem dest=files/ca.crt flat=yes
+  - name: copy ca.crt to docker cert directory
+    copy: src=files/ca.crt dest=/etc/docker/certs.d/{{ansible_default_ipv4.address}}:4000/ca.crt
+
+  - name: create ssl key for registery
+    command: openssl genrsa -out {{vld}}/certs/domain.key creates={{vld}}/certs/domain.key
+  - name: create certificate for key for registry
+    command: openssl req -new -key {{vld}}/certs/domain.key -out {{vld}}/certs/domain.csr -subj "/CN=registry" -config {{vld}}/certs/openssl.cnf creates={{vld}}/certs/domain.csr
+  - name: sign ssl cert for docker registry
+    command: openssl x509 -req -in {{vld}}/certs/domain.csr -CA {{vld}}/certs/ca.pem -CAkey {{vld}}/certs/ca-key.pem -CAcreateserial -out {{vld}}/certs/domain.crt -days 365 -extensions v3_req -extfile {{vld}}/certs/openssl.cnf creates={{vld}}/certs/domain.crt
+#  - name: combine pem and csr into crt
+#    shell: cat {{vld}}/certs/domain.csr {{vld}}/certs/domain.pem > {{vld}}/certs/domain.crt
   - name: copy the crt to all machines, initially the controller
-    fetch: src=/var/lib/docker/certs/domain.crt dest=files/domain.crt
+    fetch: src={{vld}}/certs/domain.crt dest=files/ flat=yes
+  - name: upload domain .crt into ca-certificate cache
+    copy: src=files/domain.crt dest=/usr/local/share/ca-certificates/{{ansible_hostname}}.crt
+  - name: upload ca-certificates
+    command: update-ca-certificates
+
   - name: restart docker
     service: name=docker state=restarted
   - name: check to see if docker registry is running
@@ -67,7 +96,7 @@
     when: ansible_os_family == "RedHat"
   - name: start the docker registry
 #    command: docker run -d -p 4000:5000 --restart=always --name registry registry:2
-    command: docker-compose up -d  chdir=/var/lib/docker
+    command: docker-compose up -d  chdir={{vld}}
     when: "docker_ps.stdout | search('registry') == false"
 
 ## address the docker insecure registry so that builds can succeed
@@ -92,7 +121,7 @@
   - name: update docker.service file environment file
     ini_file: dest=/etc/systemd/system/docker.service section=Service option=EnvironmentFiles value='-/etc/default/docker'
   - name: update docker.service file execstart
-    ini_file: dest=/etc/systemd/system/docker.service section=Service option=ExecStart value='/usr/bin/docker daemon -H fd:// $DOCKER_OPS'
+    ini_file: dest=/etc/systemd/system/docker.service section=Service option=ExecStart value='/usr/bin/docker daemon -H fd:// $DOCKER_OPTS'
   - name: restart daemons
     command: systemctl daemon-reload
   - name: restart docker service
@@ -107,7 +136,24 @@
     lineinfile: 'dest=/etc/kolla/globals.yml regexp=^.*kolla_internal_vip_address.* line="kolla_internal_vip_address: {{ ansible_default_ipv4.network + 254 | ipaddr }}"'
 
 ## Build the images
-#  - name: run kolla build to build source based images
-#    command: 'kolla-build --type source --base ubuntu --registry {{ ansible_default_ipv4.address }}:4000 --push'
-#    async: 10
-#    poll: 0
+  - name: run kolla build to build source based images
+    shell: kolla-build --type source --base ubuntu --registry '{{ ansible_fqdn }}':4000 --push |& tee /var/log/kolla-build.log creates:/var/log/kolla-build.log
+    async: 10
+    poll: 0
+    register: kolla_build 
+    ignore_errors: true
+  - debug: var=kolla_build
+## create and upload an SSH pair
+  - name: ensure ssh directory exists
+    file: path=~/.ssh state=directory mode=0700
+  - name: create ssh keypair
+    command: ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa creates=~/.ssh/id_rsa
+  - name: copy id_rsa to ssh directory
+    fetch: src=~/.ssh/id_rsa dest=files/ flat=yes
+  - name: fetch the public key
+    fetch: src=~/.ssh/id_rsa.pub dest=files/ flat=yes
+  - name: check on kolla-build process
+    async_status: "jid={{ kolla_build.ansible_job_id }}"
+    register: job_result
+    until: job_result.finished
+    retries: 60
