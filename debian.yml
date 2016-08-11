@@ -11,6 +11,4 @@
     - libssl-dev
     - gcc
     - git
-#- name: install upgraded kernel
-#  include: wily.yml
-#  when: ansible_kernel != '4.2.0-35-generic'
+    - bridge-utils

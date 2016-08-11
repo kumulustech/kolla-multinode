@@ -10,6 +10,7 @@
     - python-pip
     - ansible
     - ntp
+    - bridge-utils
 - name: update all
   yum: name='*' state=latest
 - name: start and enable services

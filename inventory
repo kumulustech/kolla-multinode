@@ -1,19 +1,19 @@
 [build]
-kolla.opsits.com 
+kolla.opsits.com  index=1
 #controller.opsits.com 
 #conjure.opsits.com 
 [compute]
-compute01.opsits.com 
-compute02.opsits.com 
-compute03.opsits.com 
+compute01.opsits.com index=2
+compute02.opsits.com index=3
+compute03.opsits.com index=4
 [control]
-control01.opsits.com 
-control02.opsits.com 
-control03.opsits.com 
+control01.opsits.com index=5
+control02.opsits.com index=6
+control03.opsits.com index=7
 [storage]
-storage01.opsits.com
-storage02.opsits.com
-storage03.opsits.com
+storage01.opsits.com index=8
+storage02.opsits.com index=9
+storage03.opsits.com index=10
 
 [all:vars]
 ansible_ssh_user=ubuntu
