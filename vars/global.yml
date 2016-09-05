@@ -5,3 +5,6 @@ domain: 'opsits.com'
 net_0: 10.10.10.0/24
 net_1: 10.10.20.0/24
 vld: /var/lib/docker
+pub_int: ens3
+ext_int: vxlan0
+br_int: br0

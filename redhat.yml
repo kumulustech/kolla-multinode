@@ -8,9 +8,14 @@
     - vim
     - epel-release
     - python-pip
-    - ansible
+    - python-devel
+    - libffi-devel
     - ntp
     - bridge-utils
+    - ansible
+    - libselinux-python
+    - '@Development Tools'
+    - openssl-devel
 - name: update all
   yum: name='*' state=latest
 - name: start and enable services

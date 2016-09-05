@@ -50,6 +50,7 @@ resource "openstack_compute_instance_v2" "control01" {
 
   network {
     name = "Ext-Net-498"
+    fixed_ip_v4 = "13.7.195.1"
   }
 }
 resource "openstack_compute_instance_v2" "control02" {
@@ -61,6 +62,7 @@ resource "openstack_compute_instance_v2" "control02" {
 
   network {
     name = "Ext-Net-498"
+    fixed_ip_v4 = "13.7.195.2"
   }
 }
 resource "openstack_compute_instance_v2" "control03" {
@@ -72,6 +74,7 @@ resource "openstack_compute_instance_v2" "control03" {
 
   network {
     name = "Ext-Net-498"
+    fixed_ip_v4 = "13.7.195.3"
   }
 }
 
@@ -84,6 +87,7 @@ resource "openstack_compute_instance_v2" "compute01" {
 
   network {
     name = "Ext-Net-498"
+    fixed_ip_v4 = "13.7.195.4"
   }
 }
 resource "openstack_compute_instance_v2" "compute02" {
@@ -95,6 +99,7 @@ resource "openstack_compute_instance_v2" "compute02" {
 
   network {
     name = "Ext-Net-498"
+    fixed_ip_v4 = "13.7.195.5"
   }
 }
 resource "openstack_compute_instance_v2" "compute03" {
@@ -106,6 +111,7 @@ resource "openstack_compute_instance_v2" "compute03" {
 
   network {
     name = "Ext-Net-498"
+    fixed_ip_v4 = "13.7.195.6"
   }
 }
 
@@ -118,6 +124,7 @@ resource "openstack_compute_instance_v2" "storage01" {
 
   network {
     name = "Ext-Net-498"
+    fixed_ip_v4 = "13.7.195.7"
   }
 }
 resource "openstack_compute_instance_v2" "storage02" {
@@ -129,6 +136,7 @@ resource "openstack_compute_instance_v2" "storage02" {
 
   network {
     name = "Ext-Net-498"
+    fixed_ip_v4 = "13.7.195.8"
   }
 }
 resource "openstack_compute_instance_v2" "storage03" {
@@ -140,6 +148,7 @@ resource "openstack_compute_instance_v2" "storage03" {
 
   network {
     name = "Ext-Net-498"
+    fixed_ip_v4 = "13.7.195.9"
   }
 }
 

@@ -1,0 +1,26 @@
+---
+- hosts: build
+  become: true
+  become_user: root
+  pre_tasks:
+  tasks:
+  - name: generate passwords
+    command: kolla-genpwd 
+  - name: update keystone_admin_password
+    lineinfile: >
+     dest=/etc/kolla/passwords.yml 
+     regexp='^.*keystone_admin_password:.*'
+     line='keystone_admin_password: openstack' 
+#  - name: run kolla-ansible deploy
+#    shell: kolla-ansible deploy |& tee /var/log/kolla-deploy.log
+#    args:
+#      executable: /bin/bash
+#      creates: /var/log/kolla-deploy.log
+#    async: 1200
+#    poll: 0
+#    register: ap_build
+#  - name: check on build
+#    async_status: jid={{ ap_build.ansible_job_id }}
+#    register: job_result
+#    until: job_result.finished
+#    retries: 30
