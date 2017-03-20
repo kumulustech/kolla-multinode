@@ -1,0 +1,9 @@
+[control]
+control ansible_ssh_host=147.75.101.39
+
+[compute]
+compute ansible_ssh_host=147.75.101.99
+
+[all:vars]
+ansible_ssh_user=root
+#domain=opsits.com

@@ -1,0 +1,99 @@
+- name: copy debian-network.sh script to host
+  copy:
+    src: debian-network.sh
+    dest: /root/debian-network.sh
+    mode: 0755
+
+- name: Pass options to dpkg on run
+  apt:
+    upgrade: dist
+    update_cache: yes
+    dpkg_options: 'force-confold,force-confdef'
+- name: install default packages
+  apt: 
+    name: '{{item}}'
+    state: latest
+  with_items:
+   - python-pip
+   - vim
+   - htop
+   - python-dev
+   - python-netaddr
+   - python-openstackclient
+   - python-neutronclient
+   - libffi-dev
+   - libssl-dev
+   - gcc
+   - gawk
+   - apt-transport-https
+   - ca-certificates
+   - bridge-utils
+   - apt-transport-https
+   -  ca-certificates
+- name: remove LXC/LXD
+  apt: 
+    name: '{{item}}' 
+    state: absent
+  with_items:
+   - lxc
+   - lxd
+- name: add dockerproject APT key
+  apt_key:
+    keyserver: p80.pool.sks-keyservers.net
+    id: 58118E89F3A912897C070ADBF76221572C52609D
+- name: add dockerproject repo to apt lists
+  apt_repository:
+    repo: deb https://apt.dockerproject.org/repo ubuntu-xenial main
+    state: present
+- name: install docker-engine 1.12.6
+  apt:
+   name: docker-engine=1.12.6-0~ubuntu-xenial
+   state: present 
+   force: yes
+
+- name: ensure the MountFlags=shared parameter is set for docker.service
+  ini_file:
+    dest: /etc/systemd/system/docker.service.d/kolla.conf
+    section: Service
+    option: MountFlags
+    value: shared
+    mode: 0644
+
+- name: restart docker service
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: docker
+
+- name: update pip
+  pip:
+   name: pip
+   state: latest
+- name: update pip
+  pip:
+   name: '{{item}}'
+   state: present
+  with_items:
+  - docker-py 
+  - ansible==2.1.2.0 
+  - kolla==4.0.0
+  - kolla-ansible==4.0.0
+
+- name: mkdir the /etc/kolla directory
+  file:
+    dest: /etc/kolla/
+    state: directory
+    mode: 0755
+
+- name: copy default passwords file
+  copy:
+    src: files/passwords.yml
+    dest: /etc/kolla/passwords.yml
+
+- name: create debian config from script
+  script: debian-network.sh
+  register: debian_config
+  args:
+    creates: /etc/kolla/globals.yml
+- name: did the debian config script run correctly
+  debug: var=debian_config

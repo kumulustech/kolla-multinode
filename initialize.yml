@@ -1,0 +1,122 @@
+---
+- hosts: localhost
+  connection: local
+  tasks:
+  - name: find local ssh keys
+    find: path='./' patterns='id_rsa.*'
+    register: ssh_found
+  - name: create ssh key
+    command: ssh-keygen -t rsa -N '' -f id_rsa
+    delegate_to: localhost
+    ignore_errors: yes
+    when: ssh_found.matched == 0
+
+- hosts: all
+  become: true
+  become_user: root
+  tasks:
+  - name: create and update ssh for shared communications
+    include: tasks/ssh.yml
+  - name: ensure hosts file is correct
+    include: tasks/hosts.yml
+  - name: ensure resolve has search for domain
+    include: tasks/resolve.yml
+  - name: upload files
+    copy: src={{item}} dest=/root/{{item}} mode=0755
+    with_items:
+      - add_flavor.sh
+      - post-install.sh
+      - setup_network.sh
+      - import_image.sh
+      - node_delete.sh
+      - launch.sh
+
+  - name: upload multinode template
+    template: src=templates/multinode.j2 dest=/root/multinode
+
+  - name: copy debian-network.sh script to host
+    copy:
+      src: debian-network.sh
+      dest: /root/debian-network.sh
+      mode: 0755
+  
+  - name: Pass options to dpkg on run
+    apt:
+      upgrade: dist
+      update_cache: yes
+      dpkg_options: 'force-confold,force-confdef'
+  - name: install default packages
+    apt: 
+      name: '{{item}}'
+      state: latest
+    with_items:
+     - python-pip
+     - vim
+     - htop
+     - python-dev
+     - python-netaddr
+     - python-openstackclient
+     - python-neutronclient
+     - libffi-dev
+     - libssl-dev
+     - gcc
+     - gawk
+     - ufw
+     - bridge-utils
+
+  - name: remove LXC/LXD
+    apt: 
+      name: '{{item}}' 
+      state: absent
+    with_items:
+     - lxc
+     - lxd
+
+  - name: update pip
+    pip:
+     name: pip
+     state: latest
+  - name: update pip
+    pip:
+     name: '{{item}}'
+     state: present
+    with_items:
+    - docker-py 
+    - ansible
+    - kolla==4.0.0
+    - kolla-ansible==4.0.0
+  
+  - name: mkdir the /etc/kolla directory
+    file:
+      dest: /etc/kolla/
+      state: directory
+      mode: 0755
+  
+  - name: copy default passwords file
+    copy:
+      src: files/passwords.yml
+      dest: /etc/kolla/passwords.yml
+  
+  - name: create debian config from script
+    script: debian-network.sh
+    register: debian_config
+    args:
+      creates: /etc/kolla/globals.yml
+
+- hosts: control
+  become: true
+  become_user: root
+  tasks:
+  - name: install host bootstrap requirements
+    command: kolla-ansible -i multinode bootstrap-servers
+  - name: launch openstack with kolla
+    command: kolla-ansible -i multinode deploy
+    register: deploy_multinode
+    ignore_errors: true
+  - name: run post-install config
+    command: ./post-install.sh
+    register: post_install
+    when: deploy_multinode.rc == 0
+    ignore_errors: true
+  - name: enable masquerade (NAT) on external interface
+    include: tasks/masq.yml

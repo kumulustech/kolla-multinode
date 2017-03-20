@@ -1,0 +1,18 @@
+- name: update sysctl to enable forwarding
+  lineinfile: dest=/etc/sysctl.conf line='net.ipv4.ip_forward=1' mode=0644 state=present create=yes
+  register: v4_forward
+- name: update sysctl to enable v6 forwarding
+  lineinfile: dest=/etc/sysctl.conf line='net.ipv6.conf.default.forwarding=1' mode=0644 state=present create=yes
+  register: v6_forward
+- name: reload systctl if forwarding config changed
+  command: sysctl -p
+  when: v4_forward.changed or v6_forward.changed
+- name: load the masquerade rule for bond0
+  command: iptables -t nat -A POSTROUTING -s 10.0.0.0/8 -o bond0 -j MASQUERADE
+  when: ansible_bond0 is defined 
+- name: load the masquerade rule for team0
+  command: iptables -t nat -A POSTROUTING -s 10.0.0.0/8 -o team0 -j MASQUERADE
+  when: ansible_team0 is defined 
+- name: load the masquerade rule for enp0s9
+  command: iptables -t nat -A POSTROUTING -s 10.0.0.0/8 -o enp0s9 -j MASQUERADE
+  when: ansible_enp0s9 is defined 
