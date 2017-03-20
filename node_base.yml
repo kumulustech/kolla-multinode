@@ -1,0 +1,67 @@
+---
+- hosts: all:!build
+  gather_facts: false
+  become: true
+  become_user: root
+  tasks:
+  - raw: apt-get install python -y
+    ignore_errors: true
+
+- hosts: all:!build
+  become: true
+  become_user: root
+  pre_tasks:
+  - name: include variables
+    include_vars: vars/global.yml
+  - name: install system specific packages
+    include: debian.yml
+    when: ansible_os_family == "Debian"
+  - name: install RedHat specific packages
+    include: redhat.yml
+    when: ansible_os_family == "RedHat"
+  tasks:
+  - name: deploy wily resources
+    include: wily.yml
+    when: ansible_os_family == "Debian" and not ansible_lsb.codename == "xenial"
+  - name: add ssh public key
+    authorized_key: user=root key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+  - name: update ssh config
+    copy: src=files/ssh_config dest=/root/.ssh/config mode=0644
+  - name: install docker from upstream
+    shell: curl -sSL https://get.docker.io | bash creates=/etc/docker/key.json
+  - name: ensure docker is running
+    service: name=docker state=started enabled=true
+  - name: Install pip based docker-py module
+    pip: name=docker-py
+
+  - name: Install latest pip
+    pip: name=pip state=latest
+
+  - name: restart docker
+    service: name=docker state=restarted
+  - name: install docker-compose
+    shell: curl -L https://github.com/docker/compose/releases/download/1.8.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+    args:
+      creates: /usr/local/bin/docker-compose
+  - name: ensure docker-compose is executable
+    file: dest=/usr/local/bin/docker-compose mode=0755
+
+
+## create and upload an SSH pair
+  - name: ensure ssh directory exists
+    file: path=~/.ssh state=directory mode=0700
+  - name: push ssh files
+    copy: src=files/{{item}} dest=~/.ssh/{{item}}
+    with_items:
+    - id_rsa
+    - id_rsa.pub
+    - config
+  - name: add ssh public key
+    authorized_key: user=root key="{{ lookup('file', 'files/id_rsa.pub') }}"
+  - name: create ssh keypair
+    command: ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa creates=~/.ssh/id_rsa
+  - name: copy id_rsa to ssh directory
+    fetch: src=~/.ssh/id_rsa dest=files/ flat=yes
+  - name: fetch the public key
+    fetch: src=~/.ssh/id_rsa.pub dest=files/ flat=yes
+

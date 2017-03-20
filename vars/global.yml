@@ -1,6 +1,6 @@
 ---
 # Variables for global use
-git_ssh_keys: ['rstarmer','bshetti','jstarmer','cdmerrit']
+git_ssh_keys: ['rstarmer','bshetti','jstarmer','cdmerrit','tomchris']
 domain: 'opsits.com'
 net_0: 10.10.10.0/24
 net_1: 10.10.20.0/24

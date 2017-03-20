@@ -1,19 +1,23 @@
 [build]
-kolla.opsits.com  index=1
+#student8.opsits.com  index=1
+student9.opsits.com  index=1
+#centos ansible_host=192.168.10.100  index=1
+#kolla.opsits.com  index=1
+#student2.opsits.com  index=1
 #controller.opsits.com 
 #conjure.opsits.com 
 [compute]
-compute01.opsits.com index=2
-compute02.opsits.com index=3
-compute03.opsits.com index=4
+compute1.opsits.com index=2
+compute2.opsits.com index=3
+compute3.opsits.com index=4
 [control]
-control01.opsits.com index=5
-control02.opsits.com index=6
-control03.opsits.com index=7
+controller1.opsits.com index=5
+controller2.opsits.com index=6
+controller3.opsits.com index=7
 [storage]
-storage01.opsits.com index=8
-storage02.opsits.com index=9
-storage03.opsits.com index=10
+storage1.opsits.com index=8
+storage2.opsits.com index=9
+storage3.opsits.com index=10
 
 [all:vars]
-ansible_ssh_user=ubuntu
+#ansible_ssh_user=ubuntu

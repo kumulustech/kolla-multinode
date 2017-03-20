@@ -10,13 +10,12 @@
 # create a master device resoruce in packet.net
 resource "packet_device" "kolla" {
         hostname = "kolla"
-        plan = "baremetal_1"
+        plan = "baremetal_0"
         facility = "ewr1"
-	operating_system = "centos_7"
+	operating_system = "centos_7_image"
         billing_cycle = "hourly"
         project_id = "320c2c2f-6876-4621-929a-93a47e07d2da"
 }
-
 # create a master device resoruce in packet.net
 #resource "packet_device" "minion" {
 #        hostname = "minion"

@@ -1,0 +1,41 @@
+---
+- hosts: build
+  become: true
+  become_user: root
+  pre_tasks:
+  - name: include variables
+    include_vars: vars/global.yml
+  tasks:
+
+# certificate for SSL/TLS
+  - name: create ssl certs config file for self signed cert
+    template: src=templates/openssl_cnf.j2 dest=/etc/ssl/certs/openssl.cnf mode=0644
+  - name: create a self signed CA key
+    command: openssl genrsa -out /etc/ssl/certs/ca-key.pem 2048 creates=/etc/ssl/certs/ca-key.pem
+  - name: create a signing certificate with our CA key
+    command: openssl req -x509 -new -nodes -key /etc/ssl/certs/ca-key.pem -days 10000 -out /etc/ssl/certs/ca.pem -subj "/CN=registry-ca" creates=/etc/ssl/certs/ca.pem
+  - name: create ca.crt directory for registry ip
+    file: dest=/etc/docker/certs.d/{{ansible_default_ipv4.address}}:4000/ state=directory
+  - name: create ca.crt directory for domain as link
+    file: src=/etc/docker/certs.d/{{ansible_default_ipv4.address}}:4000/ dest=/etc/docker/certs.d/{{inventory_hostname}}:4000 state=link
+  - name: get ca.pem as ca.crt
+    fetch: src=/etc/ssl/certs/ca.pem dest=files/ca.crt flat=yes
+  - name: copy ca.crt to docker cert directory
+    copy: src=files/ca.crt dest=/etc/docker/certs.d/{{ansible_default_ipv4.address}}:4000/ca.crt
+
+  - name: create ssl key for registery
+    command: openssl genrsa -out /etc/ssl/certs/domain.key creates=/etc/ssl/certs/domain.key
+  - name: create certificate for key for registry
+    command: openssl req -new -key /etc/ssl/certs/domain.key -out /etc/ssl/certs/domain.csr -subj "/CN=registry" -config /etc/ssl/certs/openssl.cnf creates=/etc/ssl/certs/domain.csr
+  - name: sign ssl cert for docker registry
+    command: openssl x509 -req -in /etc/ssl/certs/domain.csr -CA /etc/ssl/certs/ca.pem -CAkey /etc/ssl/certs/ca-key.pem -CAcreateserial -out /etc/ssl/certs/domain.crt -days 365 -extensions v3_req -extfile /etc/ssl/certs/openssl.cnf creates=/etc/ssl/certs/domain.crt
+#  - name: combine pem and csr into crt
+#    shell: cat /etc/ssl/certs/domain.csr /etc/ssl/certs/domain.pem > /etc/ssl/certs/domain.crt
+  - name: copy the crt to all machines, initially the controller
+    fetch: src=/etc/ssl/certs/domain.crt dest=files/ flat=yes
+##  - name: upload domain .crt into ca-certificate cache
+##    copy: src=files/domain.crt dest=/usr/local/share/ca-certificates/{{ansible_hostname}}.crt
+  - name: upload ca-certificates
+    command: update-ca-trust
+  - name: restart docker
+    service: name=docker state=restarted

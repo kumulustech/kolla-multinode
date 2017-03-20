@@ -1,6 +1,6 @@
 registry:
   restart: always
-  image: registry:2
+  image: registry:2.5.0
   ports:
     - 4000:5000
   environment:
@@ -9,4 +9,4 @@ registry:
     REGISTRY_HTTP_SECRET: thisisasecretthatshouldbebetter
   volumes:
     - /var/lib/docker/registry:/var/lib/registry
-    - /var/lib/docker/certs:/certs
+    - /etc/ssl/certs:/certs

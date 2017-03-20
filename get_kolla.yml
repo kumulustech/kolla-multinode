@@ -1,0 +1,23 @@
+---
+- hosts: build
+  become: true
+  become_user: root
+  pre_tasks:
+  - name: include variables
+    include_vars: vars/global.yml
+  tasks:
+
+  - name: Install ansible version 2.0 or greater
+    pip: name=pip state=latest
+  - name: Install ansible version 2.0 or greater
+    pip: name=ansible state=present version=1.9.4
+  - name: clone kolla
+    git: repo=https://git.openstack.org/openstack/kolla dest=/root/kolla version=stable/mitaka
+    ignore_errors: true
+  - name: install kolla elements
+    pip: name=kolla/ chdir=/root
+  - name: update the /etc/kolla directory
+    command: cp -r etc/kolla /etc
+    args:
+      chdir: /root/kolla
+      creates: /etc/kolla

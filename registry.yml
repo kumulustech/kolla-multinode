@@ -1,0 +1,18 @@
+---
+- hosts: build
+  become: true
+  become_user: root
+  pre_tasks:
+  - name: include variables
+    include_vars: vars/global.yml
+  tasks:
+  - name: create docker registry compose file
+    template: src=templates/registry_yml.j2 dest={{vld}}/docker-compose.yml mode=0644
+  - name: check to see if docker registry is running
+    command: docker ps
+    register: docker_ps
+  - name: start the docker registry
+    command: docker-compose up -d
+    args:
+      chdir: "{{vld}}"
+    when: "docker_ps.stdout | search('registry') == false"
