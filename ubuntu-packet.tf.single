@@ -56,7 +56,7 @@ variable project_id {
 # packet facilities:
 # ewr1
 # sjc1
-# ewr1
+# ams1
 
 # plan:
 # baremetal_0 average
@@ -67,7 +67,7 @@ variable project_id {
 resource "packet_device" "control" {
         hostname = "${var.control_name}"
         plan = "baremetal_1"
-        facility = "ewr1"
+        facility = "ams1"
         operating_system = "ubuntu_16_04_image"
         billing_cycle = "hourly"
         project_id = "320c2c2f-6876-4621-929a-93a47e07d2da"
@@ -79,7 +79,7 @@ resource "packet_device" "control" {
 # Create a new block volume
 resource "packet_volume" "control_vol" {
     description = "${var.control_name}_vol"
-    facility = "ewr1"
+    facility = "ams1"
     project_id = "${var.project_id}"
     plan = "storage_1"
     size = 10
@@ -90,7 +90,7 @@ resource "packet_volume" "control_vol" {
 resource "packet_device" "compute" {
         hostname = "${var.compute_name}"
         plan = "baremetal_1"
-        facility = "ewr1"
+        facility = "ams1"
         operating_system = "ubuntu_16_04_image"
         billing_cycle = "hourly"
         project_id = "${var.project_id}"
@@ -100,18 +100,9 @@ resource "packet_device" "compute" {
 }
 
 # Create a new block volume
-resource "packet_volume" "compute_vol_1" {
-    description = "${var.compute_name}_vol_1"
-    facility = "ewr1"
-    project_id = "${var.project_id}"
-    plan = "storage_1"
-    size = 10
-    billing_cycle = "hourly"
-}
-# Create a new block volume
-resource "packet_volume" "compute_vol_2" {
-    description = "${var.compute_name}_vol_2"
-    facility = "ewr1"
+resource "packet_volume" "compute_vol" {
+    description = "${var.compute_name}_vol"
+    facility = "ams1"
     project_id = "${var.project_id}"
     plan = "storage_1"
     size = 10

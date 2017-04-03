@@ -103,20 +103,22 @@
     args:
       creates: /etc/kolla/globals.yml
 
-- hosts: control
-  become: true
-  become_user: root
-  tasks:
-  - name: install host bootstrap requirements
-    command: kolla-ansible -i multinode bootstrap-servers
-  - name: launch openstack with kolla
-    command: kolla-ansible -i multinode deploy
-    register: deploy_multinode
-    ignore_errors: true
-  - name: run post-install config
-    command: ./post-install.sh
-    register: post_install
-    when: deploy_multinode.rc == 0
-    ignore_errors: true
-  - name: enable masquerade (NAT) on external interface
-    include: tasks/masq.yml
+#- hosts: control
+#  become: true
+#  become_user: root
+#  tasks:
+#  - name: install host bootstrap requirements
+#    command: kolla-ansible -i multinode bootstrap-servers
+#  - name: launch openstack with kolla
+#    command: kolla-ansible -i multinode deploy
+#    register: deploy_multinode
+#    ignore_errors: true
+#    run_once: true
+#  - name: run post-install config
+#    command: ./post-install.sh
+#    register: post_install
+#    when: deploy_multinode.rc == 0
+#    ignore_errors: true
+#    run_once: true
+#  - name: enable masquerade (NAT) on external interface
+#    include: tasks/masq.yml
