@@ -34,6 +34,22 @@ enable_keepalived: "no"
 kolla_base_distro: "ubuntu"
 kolla_install_type: "source"
 openstack_release: "4.0.0"
+enable_central_logging: "yes"
+#enable_ceph: "yes"
+enable_cinder: "yes"
+enable_cinder_backend_lvm: "yes"
+enable_heat: "yes"
+enable_horizon: "yes"
+enable_swift: "yes"
+
+keystone_token_provider: 'fernet'
+fernet_token_expiry: 86400
+
+glance_backend_file: "yes"
+#glance_backend_ceph: "yes"
+
+#cinder_backend_ceph: "{{ enable_ceph }}"
+#nova_backend_ceph: "{{ enable_ceph }}"
 EOF
 fi
 

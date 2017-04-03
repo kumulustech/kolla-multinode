@@ -1,0 +1,25 @@
+---
+kolla_internal_vip_address: "147.75.64.169"
+network_interface: "bond0"
+neutron_external_interface: "bond0:0"
+enable_haproxy: "no"
+enable_keepalived: "no"
+kolla_base_distro: "ubuntu"
+kolla_install_type: "source"
+openstack_release: "4.0.0"
+enable_central_logging: "yes"
+enable_ceph: "yes"
+enable_cinder: "yes"
+enable_heat: "yes"
+enable_horizon: "yes"
+enable_swift: "yes"
+
+keystone_token_provider: 'fernet'
+fernet_token_expiry: 86400
+
+glance_backend_file: "no"
+glance_backend_ceph: "yes"
+
+cinder_backend_ceph: "{{ enable_ceph }}"
+nova_backend_ceph: "{{ enable_ceph }}"
+

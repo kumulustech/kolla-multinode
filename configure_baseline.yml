@@ -29,6 +29,7 @@
       - setup_network.sh
       - import_image.sh
       - node_delete.sh
+      - tmp_swift.sh
       - launch.sh
   - name: upload multinode template
     template: src=templates/multinode.j2 dest=/root/multinode
@@ -40,6 +41,8 @@
   become: true
   become_user: root
   tasks:
+  - name: configure local storage for swift
+    command: /root/tmp_swift.sh
   - name: launch openstack with kolla
     command: kolla-ansible -i multinode deploy
     register: deploy_multinode

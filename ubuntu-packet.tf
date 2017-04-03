@@ -100,8 +100,8 @@ resource "packet_device" "compute" {
 }
 
 # Create a new block volume
-resource "packet_volume" "compute_vol_1" {
-    description = "${var.compute_name}_vol_1"
+resource "packet_volume" "compute_vol" {
+    description = "${var.compute_name}_vol"
     facility = "ewr1"
     project_id = "${var.project_id}"
     plan = "storage_1"
@@ -109,14 +109,14 @@ resource "packet_volume" "compute_vol_1" {
     billing_cycle = "hourly"
 }
 # Create a new block volume
-resource "packet_volume" "compute_vol_2" {
-    description = "${var.compute_name}_vol_2"
-    facility = "ewr1"
-    project_id = "${var.project_id}"
-    plan = "storage_1"
-    size = 10
-    billing_cycle = "hourly"
-}
+#resource "packet_volume" "compute_vol_2" {
+#    description = "${var.compute_name}_vol_2"
+#    facility = "ewr1"
+#    project_id = "${var.project_id}"
+#    plan = "storage_1"
+#    size = 10
+#    billing_cycle = "hourly"
+#}
 
 
 ###resource "packet_device" "kolla-registry" {
