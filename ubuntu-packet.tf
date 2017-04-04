@@ -89,7 +89,7 @@ resource "packet_volume" "control_vol" {
 
 resource "packet_device" "compute" {
         hostname = "${var.compute_name}"
-        plan = "baremetal_1"
+        plan = "baremetal_0"
         facility = "ewr1"
         operating_system = "ubuntu_16_04_image"
         billing_cycle = "hourly"
@@ -108,25 +108,7 @@ resource "packet_volume" "compute_vol" {
     size = 10
     billing_cycle = "hourly"
 }
-# Create a new block volume
-#resource "packet_volume" "compute_vol_2" {
-#    description = "${var.compute_name}_vol_2"
-#    facility = "ewr1"
-#    project_id = "${var.project_id}"
-#    plan = "storage_1"
-#    size = 10
-#    billing_cycle = "hourly"
-#}
 
-
-###resource "packet_device" "kolla-registry" {
-###        hostname = "kolla-registry"
-###        plan = "baremetal_0"
-###        facility = "ewr1"
-###	operating_system = "ubuntu_16_04_image"
-###        billing_cycle = "hourly"
-###        project_id = "320c2c2f-6876-4621-929a-93a47e07d2da"
-###}
 
 # Add a pointer to the new IP address
 # Note that the default TTYL is 1800 seconds, so it will take
@@ -134,21 +116,17 @@ resource "packet_volume" "compute_vol" {
 
 resource "dnsimple_record" "control" {
     domain = "${var.domain_name}"
-    type = "A"
-    name = "${var.control_name}"
-    value = "${packet_device.control.network.0.address}"
+    type   = "A"
+    ttl    = 600
+    name   = "${var.control_name}"
+    value  = "${packet_device.control.network.0.address}"
 }
 
 resource "dnsimple_record" "compute" {
     domain = "${var.domain_name}"
-    type = "A"
-    name = "${var.compute_name}"
-    value = "${packet_device.compute.network.0.address}"
+    type   = "A"
+    ttl    = 600
+    name   = "${var.compute_name}"
+    value  = "${packet_device.compute.network.0.address}"
 }
 
-###resource "digitalocean_record" "kolla-registry" {
-###    domain = "${var.domain_name}"
-###    type = "A"
-###    name = "kolla-registry"
-###    value = "${packet_device.kolla-registry.network.0.address}"
-###}

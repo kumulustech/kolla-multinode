@@ -12,6 +12,10 @@ elif [[ $(ip l | grep enp0s8) ]]; then
 NETWORK_INTERFACE="enp0s8"
 NEUTRON_INTERFACE="enp0s9"
 ifup enp0s9
+elif [[ $(ip l | grep eth0) ]]; then
+NETWORK_INTERFACE="eth0"
+NEUTRON_INTERFACE="eth0:0"
+ip l a eth0:0
 else
 echo "Can't figure out network interface, please manually edit"
 exit 1

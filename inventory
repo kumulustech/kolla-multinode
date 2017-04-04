@@ -1,8 +1,8 @@
 [control]
-control ansible_ssh_host=147.75.106.77
+control ansible_ssh_host=147.75.198.205
 
 [compute]
-compute ansible_ssh_host=147.75.106.111
+compute ansible_ssh_host=147.75.192.189
 
 [all:vars]
 ansible_ssh_user=root

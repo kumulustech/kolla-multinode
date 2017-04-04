@@ -1,4 +1,11 @@
 ---
+- hosts: all
+  gather_facts: False
+
+  tasks:
+  - name: install python 2
+    raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+
 - hosts: localhost
   connection: local
   tasks:
@@ -24,6 +31,7 @@
   - name: upload files
     copy: src={{item}} dest=/root/{{item}} mode=0755
     with_items:
+      - cinder_vol.sh
       - add_flavor.sh
       - post-install.sh
       - setup_network.sh
@@ -36,6 +44,13 @@
 
   - name: include deployment for debian hosts
     include: debian.yml
+
+##- hosts: all
+##  become: true
+##  become_user: root
+##  tasks:
+##  - name: configure local storage for cinder
+##    command: /root/cinder_vol.sh
 
 - hosts: control
   become: true
